@@ -1,20 +1,21 @@
 #! /bin/bash
 #
-# chromad          Start/Stop the chroma alert daemon.
+# /etc/rc.d/init.d/chromad
 #
-# chkconfig: 345 90 60
+# This is the service control script for the Chromatec Daemon.
+#
+# chkconfig: 345 90 10
 # description: chromad is a daemon written in C that monitors a network \
 #              attached Chromatec AM-xx. An alarm configuration file is \
 #              loaded when the daemon starts that specifies what channels \
 #              the daemon should monitor and how much silence to accept \
 #              before sending a notification email.
 # processname: chromad
-# config: /home/lleweli/cromad/alert-all.conf
-# pidfile: /var/run/cromad.pid
 
 # Source function library.
 . /etc/init.d/functions
 
+# Name of the daemon binary
 prog="chromad"
 
 # Where the daemon resides
@@ -26,68 +27,28 @@ config_dir=/etc/chromad
 # Log directory
 log_dir=/var/log/chromad
 
-# Temporary alert list file
-tmp_file=/tmp/cromad-startup.tmp
-
-# What processes to start in this file
-#startprocs=start-procs.conf
-
+# Full path to daemon executable
 bin=$daemon_dir/$prog
-
-#cd $daemon_dir
-
-processLine() {
-	line="$@"
-	$bin -v -v -c $line
-	RETVAL=$?
-}
 
 start() {
 	echo -n $"Starting $prog: "
-	STARTS=0
-	FAILS=0
 
-	# Get a list of the alert files in the config dir
-	ls $config_dir/alert-*.conf > $tmp_file
+	# This will be returned by the init script
+	RETVAL=0
 
-	if [ ! -f $tmp_file ]; then
-		echo "$tmp_file: does not exist"
-		exit 1
-	elif [ ! -r $tmp_file ]; then
-		echo "$tmp_file: can not be read"
-		exit 2
-	fi
-
-	# Get each line of the temporary file
-	exec 3<&0
-	exec 0<$tmp_file
-	while read line
+	# Start a daemon for each configuration file
+	for file in $config_dir/alert-*.conf
 	do
-		processLine $line
+		echo -n "$(basename $file): "
+		$bin -v -v -c $file
 		if [ $? -eq 0 ]; then
-			STARTS=`expr $STARTS + 1`
-			echo -n "$STARTS "
+			success
 		else
-			FAILS=`expr $FAILS + 1`
+			RETVAL=$(expr $RETVAL + 1)
+			failure
 		fi
+		echo
 	done
-	exec 0<&3
-
-	# Remove the temporary file
-	rm $tmp_file
-
-	# Call the status function based on attempts
-	if [ $STARTS -eq 0 ]; then
-		failure
-		RETVAL=1
-	elif [ $FAILS -gt 0 ]; then
-		warning
-		RETVAL=2
-	else
-		success
-		RETVAL=0
-	fi
-	echo
 
 	return $RETVAL
 }
@@ -98,40 +59,39 @@ stop() {
 	# Stop the data streams
 	$bin -h > /dev/null
 
+	RETVAL=0
+
 	# Kill the local processes
-	cromad_pid=$(pgrep -ofx "${bin}.*")
-	while [ $cromad_pid -ne $$ ]
+	chromad_pid=$(pgrep -ofx "${bin}.*")
+	while [ $chromad_pid -ne $$ ]
 	do
-		kill -SIGTERM $cromad_pid
-		RETVAL=$?
+		echo -n "Killing $chromad_pid: "
+		kill -SIGTERM $chromad_pid
+		STATUS=$?
 		sleep 1
-		if [ $RETVAL -eq 0 ]; then
-			echo -n "$cromad_pid "
+		if [ $STATUS -eq 0 ]; then
+			success
+		else
+			RETVAL=$(expr $RETVAL + 1)
+			failure
 		fi
-		cromad_pid=$(pgrep -ofx "${bin}.*")
+		chromad_pid=$(pgrep -ofx "${bin}.*")
+		echo
 	done
-
-	success
-
-	echo
 
 	return $RETVAL
 }
 
-restart() {
-  	stop
-	start
-}
-
 case "$1" in
-  start)
+start)
   	start
 	;;
-  stop)
+stop)
   	stop
 	;;
-  restart)
-  	restart
+reload|restart)
+  	stop
+	start
 	;;
   *)
 	echo $"Usage: $0 {start|stop|restart}"

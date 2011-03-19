@@ -23,14 +23,18 @@ install-config:
 	cp alert-chroma.conf /etc/chromad/
 	cp chroma-channels.conf /etc/chromad/
 
+uninstall-config:
+	rm -fr /etc/chromad
+
 install-log:
 	mkdir /var/log/chromad
+
+uninstall-log:
+	rm -fr /var/log/chromad
 
 install: chromad install-config install-log
 	cp chromad /usr/local/bin/
 
-uninstall:
-	rm -fr /etc/chromad
-	rm -fr /var/log/chromad
+uninstall: uninstall-config uninstall-log
 	rm -f /usr/local/bin/chromad
 
