@@ -1,7 +1,7 @@
 /* Usage:
-cromalarm [-q] [-c <config-file>] [-v ...]
+chromad [-q] [-c <config-file>] [-v ...]
   -q - Query Data Streams
-  -c - File that holds configuration data (default: cromalarm.conf)
+  -c - File that holds configuration data
   -v - increases the verbosity by one level */
 
 #include "chromad.h"
@@ -24,9 +24,9 @@ int read_config(char *conf_file) {
     if ( !(conf_line[0] == '#' || conf_line[0] == 0x0A || conf_line[0] == ' ') ) {
       /* Get param name from line and terminate string with \0 */
       strtok(conf_line, " ");
-      if ( !strcmp(conf_line, "Croma_Host") ) {
+      if ( !strcmp(conf_line, "Chroma_Host") ) {
         conf_var = strtok(NULL, " \n");
-        strcpy(Croma_Host, conf_var);
+        strcpy(Chroma_Host, conf_var);
       } else if ( !strcmp(conf_line, "Local_Port") ) {
         conf_var = strtok(NULL, " \n");
         strcpy(Local_Port, conf_var);
@@ -172,7 +172,7 @@ int queryds(void) {
     return 1;
   }
 
-  server = gethostbyname(Croma_Host);
+  server = gethostbyname(Chroma_Host);
   if ( server == NULL ) {
     log_message(1, "Query mode: DNS lookup failure");
     return 1;
@@ -232,7 +232,7 @@ int startds(void) {
     return 1;
   }
 
-  server = gethostbyname(Croma_Host);
+  server = gethostbyname(Chroma_Host);
   if ( server == NULL ) {
     log_message(1, "DNS lookup failure");
     return 1;
@@ -292,7 +292,7 @@ int haltds(void) {
     return 1;
   }
 
-  server = gethostbyname(Croma_Host);
+  server = gethostbyname(Chroma_Host);
   if ( server == NULL ) {
     log_message(1, "DNS lookup failure\n");
     return 1;
@@ -581,13 +581,7 @@ int email(char *message) {
     }
 
     // email body //
-    // Reset the email message to CRLF's - stops quoted-printable characters in SMS //
-    while ( mem_counter <= 75 ) {
-      memcpy(&email_body[0+(2*mem_counter)], "\r\n", 2);
-      mem_counter++;
-    }
-    memcpy(&email_body[144], "\r\n.\r\n\0", 6);
-    //memcpy(email_body, input_message, strlen(input_message));
+    sprintf(email_body, "%s\r\n.\r\n\0", input_message);
     n = write(tcp_sock, email_body, strlen(email_body));
     if ( n < 0 ) {
       log_message(0, "Unable to send email body to SMTP Host");

@@ -11,12 +11,11 @@ and how much silence to accept before sending a notification email.
 
 How to install
 --------------
-I'm new to make, so bear with me if this is a bad way to do it..
 $ make
 then
 $ make install
 
-There is a init.d script that can be installed also using:
+There is an init.d script that can be installed also using:
 $ make install-service
 
 An example configuration file is provided and installed into

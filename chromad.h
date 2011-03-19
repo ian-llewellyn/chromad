@@ -1,8 +1,23 @@
-/* Usage:
-cromalarm [-q] [-c <config-file>] [-v ...]
-  -q - Query Data Streams
-  -c - File that holds configuration data (default: cromalarm.conf)
-  -v - increases the verbosity by one level */
+/*
+ *	chromad: a Chromatec AM-xx Alarm Monitor and Email Notifier
+ *
+ *	Copyright (C) 2009-2011 Ian Llewellyn
+ *
+ *	This library is free software; you can redistribute it and/or
+ *	modify it under the terms of the GNU Lesser General Public
+ *	License as published by the Free Software Foundation; either
+ *	version 2.1 of the License, or (at your option) any later version.
+ *
+ *	This library is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *	Lesser General Public License for more details.
+ *
+ *	You should have received a copy of the GNU Lesser General Public
+ *	License along with this library; if not, write to the Free Software
+ *	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
 
 #include<stdio.h>
 #include<stdlib.h> /* exit() */
@@ -39,7 +54,7 @@ cromalarm [-q] [-c <config-file>] [-v ...]
 char conf_file[4096] = "/etc/chromad/alert-chroma.conf";
 
 /* Default config variables */
-char Croma_Host[83] = "10.0.0.1";
+char Chroma_Host[83] = "10.0.0.1";
 char Local_Port[5] = "65496";
 char Alarms[64] = "2222112222";
 char SMTP_Host[83] = "localhost";
