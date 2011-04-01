@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 #
 # /etc/rc.d/init.d/chromad
 #
@@ -31,39 +31,28 @@ log_dir=/var/log/chromad
 bin=$daemon_dir/$prog
 
 start() {
-	echo -n $"Starting $prog: "
+	# What config file is to be used
+	file=$1
 
-	# This will be returned by the init script
-	RETVAL=0
+	# Let the user know what's about to happen
+	echo -n "$(basename "$file"): "
 
-	# Start a daemon for each configuration file
-	for file in $config_dir/alert-*.conf
-	do
-		echo -n "$(basename $file): "
-		$bin -v -v -c $file
-		if [ $? -eq 0 ]; then
-			success
-		else
-			RETVAL=$(expr $RETVAL + 1)
-			failure
-		fi
-		echo
-	done
-
-	return $RETVAL
+	$bin -v -v -c "$file"
+	if [ $? -eq 0 ]; then
+		success
+		return 0
+	else
+		failure
+		return 1
+	fi
 }
 
 stop() {
-	echo -n $"Stopping $prog: "
-
-	# Stop the data streams
-	$bin -h > /dev/null
-
 	RETVAL=0
 
 	# Kill the local processes
-	chromad_pid=$(pgrep -ofx "${bin}.*")
-	while [ $chromad_pid -ne $$ ]
+	chromad_pids=$(pgrep -fx "${bin} .*-v -v -c $1")
+	for chromad_pid in $chromad_pids
 	do
 		echo -n "Killing $chromad_pid: "
 		kill -SIGTERM $chromad_pid
@@ -75,7 +64,7 @@ stop() {
 			RETVAL=$(expr $RETVAL + 1)
 			failure
 		fi
-		chromad_pid=$(pgrep -ofx "${bin}.*")
+		chromad_pid=$(pgrep -ofx "${bin} -v -v -c $1")
 		echo
 	done
 
@@ -84,16 +73,63 @@ stop() {
 
 case "$1" in
 start)
-  	start
+	echo -n $"Starting $prog: "
+
+	# This will be returned by the init script
+	RETVAL=0
+
+	shift
+
+	if [ -z $1 ]; then
+		# Start a daemon for each config file in the
+		# standard config directory
+		for file in $config_dir/alert-*.conf
+		do
+			start "$file"
+			RETVAL=$(expr $RETVAL + $?)
+			echo
+		done
+	else
+		# Start a daemon for each file passed in
+		for file in "$@"
+		do
+			start "$file"
+			RETVAL=$(expr $RETVAL + $?)
+			echo
+		done
+	fi
+
+	exit $RETVAL
 	;;
 stop)
-  	stop
+	echo -n $"Stopping $prog: "
+	shift
+	if [ -z $1 ]; then
+		# Stop all streams from the Chromatec
+		$bin -h > /dev/null
+		for file in $config_dir/alert-*.conf
+		do
+			stop "$file"
+			RETVAL=$(expr $RETVAL + $?)
+		done
+	else
+		for file in "$@"
+		do
+			stop "$file"
+			RETVAL=$(expr $RETVAL + $?)
+		done
+	fi
+
+  	exit $RETVAL
 	;;
 reload|restart)
+	# FIXME: Because of the "shift" in the end function,
+	# the start function below would actually skip the
+	# first config file listed in a multi-config command line.
   	stop
 	start
 	;;
-  *)
-	echo $"Usage: $0 {start|stop|restart}"
+*)
+	echo $"Usage: $0 {start|stop|restart} [config_file]"
 	exit 1
 esac
