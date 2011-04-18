@@ -22,9 +22,11 @@ install-config:
 	mkdir /etc/chromad
 	cp alert-chroma.conf /etc/chromad/
 	cp chroma-channels.conf /etc/chromad/
+	cp chromad-logrotate.d-config /etc/logrotate.d/chromad
 
 uninstall-config:
 	rm -fr /etc/chromad
+	rm -f /etc/logrotate.d/chromad
 
 install-log:
 	mkdir /var/log/chromad

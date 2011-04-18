@@ -1,0 +1,11 @@
+/var/log/chromad/*.log {
+    missingok
+    weekly
+    rotate 4
+    create
+    notifempty
+    sharedscripts
+    prerotate
+        killall -SIGUSR1 chromad || /bin/true
+    endscript
+}
